@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>타이머 · 스톱워치</title>
+<style>
+  :root{
+    --forest:#1E3A2C;
+    --forest-soft:#2C4E3B;
+    --beige:#E5DBC4;
+    --beige-deep:#D8CCAF;
+    --mustard:#C9A23A;
+    --ink:#1E3A2C;
+    --muted:#5C6B5E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+    background:var(--beige);
+    color:var(--ink);
+    display:flex;
+    justify-content:center;
+    padding:24px 16px;
+    min-height:100vh;
+  }
+  .app{width:100%;max-width:360px;}
+  header{
+    display:flex;align-items:center;gap:8px;
+    margin-bottom:20px;
+  }
+  header .logo{font-size:22px;}
+  header h1{font-size:19px;color:var(--forest);font-weight:700;letter-spacing:-.3px;}
+
+  /* 탭 */
+  .tabs{
+    display:flex;background:var(--beige-deep);border-radius:12px;padding:4px;margin-bottom:22px;
+  }
+  .tabs button{
+    flex:1;border:0;background:transparent;padding:10px 0;border-radius:9px;
+    font-size:15px;font-weight:600;color:var(--muted);cursor:pointer;transition:.15s;
+  }
+  .tabs button.active{background:var(--forest);color:var(--beige);}
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  /* 큰 시간 표시 */
+  .display{
+    text-align:center;
+    font-variant-numeric:tabular-nums;
+    font-weight:700;
+    color:var(--forest);
+    letter-spacing:-1px;
+    margin:8px 0 20px;
+    line-height:1;
+  }
+  #timerDisplay{font-size:64px;}
+  #swDisplay{font-size:56px;}
+  .display.warn{color:var(--mustard);}
+
+  /* 뽀모도로 모드 선택 */
+  .modes{display:flex;gap:8px;margin-bottom:14px;}
+  .modes button{
+    flex:1;border:1.5px solid var(--beige-deep);background:transparent;color:var(--muted);
+    padding:9px 0;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;
+  }
+  .modes button.active{border-color:var(--forest);background:var(--forest);color:var(--beige);}
+
+  /* 커스텀 입력 */
+  .custom{
+    display:flex;align-items:center;justify-content:center;gap:10px;
+    background:var(--beige-deep);border-radius:12px;padding:12px;margin-bottom:18px;
+  }
+  .custom label{font-size:13px;color:var(--muted);font-weight:600;}
+  .custom input{
+    width:70px;text-align:center;font-size:17px;font-weight:700;color:var(--forest);
+    border:1.5px solid #fff8;border-radius:8px;padding:8px 6px;background:#fff;
+  }
+  .custom span{font-size:13px;color:var(--muted);}
+
+  /* 버튼 */
+  .controls{display:flex;gap:10px;}
+  .controls button{
+    flex:1;border:0;border-radius:12px;padding:14px 0;font-size:15px;font-weight:700;cursor:pointer;transition:.15s;
+  }
+  .btn-primary{background:var(--forest);color:var(--beige);}
+  .btn-primary:active{background:var(--forest-soft);}
+  .btn-ghost{background:var(--beige-deep);color:var(--forest);}
+  .btn-accent{background:var(--mustard);color:#fff;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+
+  /* 랩 목록 */
+  .laps{margin-top:18px;max-height:220px;overflow-y:auto;}
+  .laps .lap{
+    display:flex;justify-content:space-between;padding:10px 4px;
+    border-bottom:1px solid var(--beige-deep);font-size:14px;font-variant-numeric:tabular-nums;
+  }
+  .laps .lap b{color:var(--forest);}
+  .laps .lap span{color:var(--muted);}
+  .laps:empty{display:none;}
+
+  footer{margin-top:26px;text-align:center;font-size:11px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="logo">🌲</span>
+    <h1>타이머 · 스톱워치</h1>
+  </header>
+
+  <div class="tabs">
+    <button id="tabTimer" class="active" onclick="switchTab('timer')">타이머</button>
+    <button id="tabSw" onclick="switchTab('sw')">스톱워치</button>
+  </div>
+
+  <!-- 타이머 패널 -->
+  <section id="panelTimer" class="panel active">
+    <div id="timerDisplay" class="display">25:00</div>
+
+    <div class="modes">
+      <button class="mode active" data-min="25" onclick="pickMode(this,25)">집중</button>
+      <button class="mode" data-min="5" onclick="pickMode(this,5)">짧은휴식</button>
+      <button class="mode" data-min="15" onclick="pickMode(this,15)">긴휴식</button>
+    </div>
+
+    <div class="custom">
+      <label for="minInput">직접 설정</label>
+      <input id="minInput" type="number" min="1" max="180" value="25" inputmode="numeric" onchange="setCustom()" />
+      <span>분</span>
+    </div>
+
+    <div class="controls">
+      <button id="timerStart" class="btn-primary" onclick="startTimer()">시작</button>
+      <button id="timerPause" class="btn-accent" onclick="pauseTimer()" disabled>일시정지</button>
+      <button class="btn-ghost" onclick="resetTimer()">리셋</button>
+    </div>
+  </section>
+
+  <!-- 스톱워치 패널 -->
+  <section id="panelSw" class="panel">
+    <div id="swDisplay" class="display">00:00.0</div>
+
+    <div class="controls">
+      <button id="swStart" class="btn-primary" onclick="toggleSw()">시작</button>
+      <button id="swLap" class="btn-ghost" onclick="lapSw()" disabled>랩</button>
+      <button class="btn-ghost" onclick="resetSw()">리셋</button>
+    </div>
+
+    <div id="laps" class="laps"></div>
+  </section>
+
+  <footer>소리로만 알려드려요 · 데이터는 저장하지 않습니다</footer>
+</div>
+
+<script>
+/* ===== 탭 전환 ===== */
+function switchTab(name){
+  const isTimer = name === 'timer';
+  document.getElementById('tabTimer').classList.toggle('active', isTimer);
+  document.getElementById('tabSw').classList.toggle('active', !isTimer);
+  document.getElementById('panelTimer').classList.toggle('active', isTimer);
+  document.getElementById('panelSw').classList.toggle('active', !isTimer);
+}
+
+/* ===== 알림음 (Web Audio, 외부파일 없음) ===== */
+let audioCtx;
+function beep(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    // 3회 반복되는 부드러운 벨 소리
+    [0, 0.35, 0.7].forEach(t=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now + t);
+      gain.gain.setValueAtTime(0.0001, now + t);
+      gain.gain.exponentialRampToValueAtTime(0.3, now + t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.3);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now + t);
+      osc.stop(now + t + 0.32);
+    });
+  }catch(e){/* 오디오 미지원 환경은 조용히 무시 */}
+}
+
+/* ===== 타이머 ===== */
+let timerTotal = 25 * 60;   // 설정된 총 시간(초)
+let timerLeft  = 25 * 60;   // 남은 시간(초)
+let timerId = null;
+
+function fmtTimer(sec){
+  const m = String(Math.floor(sec/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  return m + ':' + s;
+}
+function renderTimer(){
+  const d = document.getElementById('timerDisplay');
+  d.textContent = fmtTimer(timerLeft);
+  d.classList.toggle('warn', timerLeft <= 10 && timerLeft > 0);
+}
+function pickMode(btn, min){
+  document.querySelectorAll('.mode').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('minInput').value = min;
+  applyMinutes(min);
+}
+function setCustom(){
+  document.querySelectorAll('.mode').forEach(b=>b.classList.remove('active'));
+  let v = parseInt(document.getElementById('minInput').value, 10);
+  if(isNaN(v) || v < 1) v = 1;
+  if(v > 180) v = 180;
+  document.getElementById('minInput').value = v;
+  applyMinutes(v);
+}
+function applyMinutes(min){
+  pauseTimer();
+  timerTotal = min * 60;
+  timerLeft  = timerTotal;
+  renderTimer();
+}
+function startTimer(){
+  if(timerId || timerLeft <= 0) return;
+  // 사용자 제스처로 오디오 컨텍스트 미리 활성화
+  try{ audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){}
+  document.getElementById('timerStart').disabled = true;
+  document.getElementById('timerPause').disabled = false;
+  timerId = setInterval(()=>{
+    timerLeft--;
+    renderTimer();
+    if(timerLeft <= 0){
+      clearInterval(timerId); timerId = null;
+      beep();
+      document.getElementById('timerStart').disabled = false;
+      document.getElementById('timerPause').disabled = true;
+    }
+  }, 1000);
+}
+function pauseTimer(){
+  if(timerId){ clearInterval(timerId); timerId = null; }
+  document.getElementById('timerStart').disabled = false;
+  document.getElementById('timerPause').disabled = true;
+}
+function resetTimer(){
+  pauseTimer();
+  timerLeft = timerTotal;
+  renderTimer();
+}
+
+/* ===== 스톱워치 ===== */
+let swStartTime = 0;    // 기준 시각
+let swElapsed = 0;      // 누적 경과(ms)
+let swId = null;
+let lapCount = 0;
+let lastLap = 0;
+
+function fmtSw(ms){
+  const totalSec = Math.floor(ms/1000);
+  const m = String(Math.floor(totalSec/60)).padStart(2,'0');
+  const s = String(totalSec%60).padStart(2,'0');
+  const t = Math.floor((ms%1000)/100); // 0.1초 단위
+  return m + ':' + s + '.' + t;
+}
+function renderSw(){
+  document.getElementById('swDisplay').textContent = fmtSw(swElapsed);
+}
+function toggleSw(){
+  const btn = document.getElementById('swStart');
+  if(swId){ // 정지
+    swElapsed += Date.now() - swStartTime;
+    clearInterval(swId); swId = null;
+    btn.textContent = '계속';
+    document.getElementById('swLap').disabled = true;
+  }else{ // 시작
+    swStartTime = Date.now();
+    swId = setInterval(()=>{
+      renderSwLive();
+    }, 100);
+    btn.textContent = '정지';
+    document.getElementById('swLap').disabled = false;
+  }
+}
+function renderSwLive(){
+  document.getElementById('swDisplay').textContent = fmtSw(swElapsed + (Date.now() - swStartTime));
+}
+function currentSwMs(){
+  return swElapsed + (swId ? Date.now() - swStartTime : 0);
+}
+function lapSw(){
+  const now = currentSwMs();
+  const split = now - lastLap;
+  lastLap = now;
+  lapCount++;
+  const el = document.getElementById('laps');
+  const row = document.createElement('div');
+  row.className = 'lap';
+  row.innerHTML = '<span>랩 ' + lapCount + '</span><b>+' + fmtSw(split) + '</b><span>' + fmtSw(now) + '</span>';
+  el.prepend(row);
+}
+function resetSw(){
+  if(swId){ clearInterval(swId); swId = null; }
+  swElapsed = 0; lastLap = 0; lapCount = 0;
+  document.getElementById('swStart').textContent = '시작';
+  document.getElementById('swLap').disabled = true;
+  document.getElementById('laps').innerHTML = '';
+  renderSw();
+}
+
+/* 초기 렌더 */
+renderTimer();
+renderSw();
+</script>
+</body>
+</html>
