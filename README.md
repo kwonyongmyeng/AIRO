@@ -43,3 +43,24 @@
 | 크롬 (안드로이드) | ✅ | ✅ |
 | 사파리 (macOS·iOS) | ⚠️ 일부 제한 | ✅ |
 | 파이어폭스 | ❌ 미지원 | ✅ |
+
+## ▲ 버셀(Vercel) 배포
+
+이 저장소는 빌드가 필요 없는 정적 사이트라 버셀에 그대로 올릴 수 있습니다.
+
+1. [vercel.com/new](https://vercel.com/new) 에서 GitHub 계정을 연결하고 `kwonyongmyeng/AIRO` 저장소를 **Import** 합니다.
+2. Framework Preset은 **Other**, Build Command와 Output Directory는 **비워 둡니다**(빌드 도구가 없습니다).
+3. **Deploy**를 누르면 1분 안에 배포가 끝납니다.
+
+배포 후 주소는 다음과 같습니다.
+
+| 경로 | 화면 |
+| --- | --- |
+| `/live-translate/` | 라이브 5개국어 통역기 |
+| `/translate` | 위와 동일(짧은 주소) |
+| `/` | 기존 AI Studio 앱 |
+
+### `vercel.json`이 하는 일
+
+기존 루트 `index.html`은 `/AIRO/assets/...` 경로로 파일을 불러옵니다. GitHub Pages는 저장소 이름이 주소에 붙어(`/AIRO/`) 정상 동작하지만, 버셀은 사이트가 최상위 경로에 놓이므로 그대로 두면 404가 납니다.
+`vercel.json`의 재작성(rewrite) 규칙이 `/AIRO/*` 요청을 `/*`로 넘겨 주어 두 곳 모두에서 같은 파일이 동작합니다. GitHub Pages는 이 파일을 무시하므로 기존 배포에는 영향이 없습니다.
