@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>오목 대전 · 2인 플레이</title>
+    <meta name="description" content="한 화면에서 두 사람이 번갈아 두는 오목 게임. 시작·종료·다시하기와 승률 기록 기능을 제공합니다." />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app__header">
+        <h1 class="app__title">오목 대전</h1>
+        <p class="app__subtitle">한 화면에서 두 사람이 번갈아 돌을 놓습니다. 가로·세로·대각선으로 5개를 먼저 이으면 승리합니다.</p>
+      </header>
+
+      <main class="layout">
+        <!-- 왼쪽: 바둑판 -->
+        <section class="panel panel--board" aria-label="바둑판">
+          <div class="turn" id="turnBar">
+            <span class="turn__stone" id="turnStone" data-color="black" aria-hidden="true"></span>
+            <span class="turn__text" id="turnText">시작 버튼을 눌러 대국을 시작하세요.</span>
+          </div>
+
+          <div class="board-wrap">
+            <canvas id="board" width="600" height="600" role="img"
+                    aria-label="15줄 오목판. 마우스나 손가락으로 교차점을 눌러 돌을 놓습니다."></canvas>
+            <div class="board-cover" id="boardCover">
+              <p class="board-cover__text">대국 준비 완료</p>
+              <button type="button" class="btn btn--primary btn--lg" id="coverStartBtn">시작하기</button>
+            </div>
+          </div>
+
+          <div class="board-meta">
+            <span id="moveCount">0수</span>
+            <span aria-hidden="true">·</span>
+            <span id="timer">00:00</span>
+            <span aria-hidden="true">·</span>
+            <span id="lastMove">마지막 착수 —</span>
+          </div>
+
+          <div class="controls" role="group" aria-label="게임 조작">
+            <button type="button" class="btn btn--primary" id="startBtn">시작</button>
+            <button type="button" class="btn btn--ghost" id="restartBtn">다시하기</button>
+            <button type="button" class="btn btn--ghost" id="undoBtn">무르기</button>
+            <button type="button" class="btn btn--danger" id="stopBtn">종료</button>
+          </div>
+
+          <p class="hint" id="hint">돌을 놓을 교차점을 누르세요. 무르기는 진행 중일 때만 사용할 수 있습니다.</p>
+        </section>
+
+        <!-- 오른쪽: 전적 -->
+        <section class="panel panel--stats" aria-label="전적과 승률">
+          <h2 class="panel__title">전적 &amp; 승률</h2>
+
+          <div class="record" id="recordBlack">
+            <div class="record__head">
+              <span class="stone-badge" data-color="black" aria-hidden="true"></span>
+              <label class="record__label" for="nameBlack">흑돌(선공)</label>
+            </div>
+            <input class="record__name" id="nameBlack" type="text" maxlength="10" value="플레이어 1" aria-label="흑돌 플레이어 이름" />
+            <div class="rate">
+              <strong class="rate__value" id="rateBlack">0.0<span>%</span></strong>
+              <div class="rate__bar"><span id="barBlack" style="width:0%"></span></div>
+            </div>
+            <p class="record__detail" id="detailBlack">0전 0승 0패 0무</p>
+          </div>
+
+          <div class="record" id="recordWhite">
+            <div class="record__head">
+              <span class="stone-badge" data-color="white" aria-hidden="true"></span>
+              <label class="record__label" for="nameWhite">백돌(후공)</label>
+            </div>
+            <input class="record__name" id="nameWhite" type="text" maxlength="10" value="플레이어 2" aria-label="백돌 플레이어 이름" />
+            <div class="rate">
+              <strong class="rate__value" id="rateWhite">0.0<span>%</span></strong>
+              <div class="rate__bar"><span id="barWhite" style="width:0%"></span></div>
+            </div>
+            <p class="record__detail" id="detailWhite">0전 0승 0패 0무</p>
+          </div>
+
+          <p class="note">승률 = 승 ÷ (승 + 패) × 100. 무승부는 승률 계산에서 제외하고 따로 표시합니다.</p>
+
+          <div class="option">
+            <label class="switch">
+              <input type="checkbox" id="overlineOption" checked />
+              <span>6목 이상(장목)도 승리로 인정</span>
+            </label>
+          </div>
+
+          <button type="button" class="btn btn--ghost btn--block" id="resetStatsBtn">전적 초기화</button>
+
+          <h3 class="panel__subtitle">최근 대국</h3>
+          <ul class="history" id="history">
+            <li class="history__empty">아직 기록이 없습니다.</li>
+          </ul>
+        </section>
+      </main>
+
+      <footer class="app__footer">
+        <p>전적은 이 브라우저에만 저장됩니다. 브라우저 데이터를 지우면 기록도 함께 사라집니다.</p>
+      </footer>
+    </div>
+
+    <!-- 결과 알림 -->
+    <div class="result" id="result" hidden>
+      <div class="result__box" role="alertdialog" aria-labelledby="resultTitle" aria-describedby="resultDesc">
+        <p class="result__emoji" id="resultEmoji" aria-hidden="true">🎉</p>
+        <h2 class="result__title" id="resultTitle">승리!</h2>
+        <p class="result__desc" id="resultDesc"></p>
+        <div class="result__actions">
+          <button type="button" class="btn btn--primary" id="resultAgainBtn">한 판 더</button>
+          <button type="button" class="btn btn--ghost" id="resultCloseBtn">판 보기</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
