@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  /* 브랜드 팔레트 — 기존 AIRO 로고의 네이비(#043d84) 기준 */
+  --color-brand-50: #eef4fc;
+  --color-brand-100: #d6e4f7;
+  --color-brand-200: #adc8ef;
+  --color-brand-300: #7ea7e4;
+  --color-brand-400: #4a7fd4;
+  --color-brand-500: #1f5cbb;
+  --color-brand-600: #043d84;
+  --color-brand-700: #03306a;
+  --color-brand-800: #02244f;
+  --color-brand-900: #011a3b;
+
+  --color-ink: #0f172a;
+  --color-muted: #55637a;
+  --color-line: #e2e8f0;
+  --color-kakao: #fee500;
+
+  --font-sans:
+    "Pretendard", "Pretendard Variable", -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui,
+    sans-serif;
+}
+
+@layer base {
+  :root {
+    scroll-behavior: smooth;
+    /* 고정 헤더 높이만큼 앵커 이동 위치 보정 */
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    background-color: #ffffff;
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-600);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  .container-page {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: 1.25rem;
+  }
+}
+
+/* 스크롤 진입 애니메이션 */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.6s ease-out,
+    transform 0.6s ease-out;
+}
+
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    scroll-behavior: auto;
+  }
+
+  .reveal,
+  .reveal[data-visible="true"] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
